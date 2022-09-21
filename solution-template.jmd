@@ -70,7 +70,7 @@ end
 
 # establishing x (distance) vector and data vector to store values
 xvec = range(0,15, length=15)
-data1 = zeros(15)
+data1 = zeros(15);
 # for loop to iterate through distance vector and evaluate function
 for i in 1:15
     data1[i] = docalc(xvec[i],u,cs,c01,b01,n01)
@@ -87,31 +87,142 @@ n02 = (110000*n02a + 15000*35)/125000
 
 # establishing x (distance) vector and data vector to store values
 xvec1 = range(0,35, length=35)
-data2 = zeros(35)
+data2 = zeros(35);
 # for loop to iterate through distance vector and evaluate function
 for j in 1:35
     data2[j] = docalc(xvec1[j],u,cs,c02,b02,n02)
 end
 
+for k in 1:35
+    if data2[k] > 6 && data2[k] < 6.2
+    return data2[k], xvec1[k]
+    end
+end
+
 # plotting data for first 15km
-plot(xvec,data1);
+plot(xvec,data1, label="DO Concentration", color=[:blue]);
 #plotting data for next 35 km
-plot!(range(15,50, length=35),data2)
-
-# establishing BOD/NOD functions
-
+plot!(range(15,50, length=35),data2, xlabel = "Distance [km]", ylabel = "DO Concentration [mg/L]", title = "DO Concentration vs. Distance", legend=:bottomright, color=[:blue], label=false);
+vline!([0], label="Release Point 1", color=[:black]);
+vline!([15], label="Release Point 2", color=[:black])
 
 ```
 
 ## Problem 1.2
+The distance from waste stream 2 was calculated above as approximately 26.7 km downstream
 
 ## Problem 1.3
+To determine the level of treatment necessary, I applied a % removal factor to the initial organic waste values coming from waste stream 2.
+
+```julia 
+
+# waste stream 2 inital values
+w2c = 5;
+w2b = 45;
+w2n = 35;
+
+# treatment percent removal 
+e = [0.12 0.13 0.14 0.145 0.15 0.155 0.16 0.165];
+data2vec = zeros(35,8);
+
+for i in 1:8
+
+c02 = (110000*c02a + 15000*w2c*(1- e[i]))/125000
+b02 = (110000*b02a + 15000*w2b*(1- e[i]))/125000
+n02 = (110000*n02a + 15000*w2n*(1- e[i]))/125000
+
+xvec1 = range(0,35, length=35)
+# for loop to iterate through distance vector and evaluate function
+    for j in 1:35
+        data2vec[j,i] = docalc(xvec1[j],u,cs,c02,b02,n02)
+    end
+end
+
+for i in 1:8
+    if minimum(minimum.([data2vec[:,i]])) > 4
+    return e[i]
+    end
+end
+```
+The minimum level of treatment needed for waste stream 2 is 14% removal 
 
 ## Problem 1.4
+```julia
 
+w1c = 5;
+w1b = 50;
+w1n = 35;
+
+# establishing function to calculate dissolved oxygen as a function of x
+function docalc(x,u,cs,c01,b01,n01)
+# establishing coefficients
+a1 = exp(-(ka*x)/u)
+a2 = (kc/(ka-kc))*(exp(-kc*x/u)-exp(-ka*x/u))
+a3 = (kn/(ka-kn))*(exp(-kn*x/u)-exp(-ka*x/u))
+# calculate concentration
+c = cs*(1-a1) + c01*a1 - b01*a2 - n01*a3
+return c
+end
+
+for i in 1:8
+
+e = [0.0025 0.005 0.0075 0.01 0.0125 0.015 0.0175 0.02];
+
+# intial DO concentration at waste source 1 [mg/L]
+c01 = (100000*7.5 + 10000*(1- e[i]))/110000
+# initial BOD concentration at waste source 1 [mg/L]
+b01 = (100000*5 + 10000*(1- e[i]))/110000
+# initial NOD concentration at waste source 1 [mg/L]
+n01 = (100000*5 + 10000*(1- e[i]))/110000
+# decay rates k [1/d]
+ka = 0.55
+kc = 0.35
+kn = 0.25
+
+# establishing x (distance) vector and data vector to store values
+xvec = range(0,15, length=15)
+data1 = zeros(15);
+# for loop to iterate through distance vector and evaluate function
+for i in 1:15
+    data1[i] = docalc(xvec[i],u,cs,c01,b01,n01)
+end
+
+# finding new initial DO concentration from data1 vector
+c02a = data1[15]
+b02a = b01*exp(-kc*15/u)
+n02a = n01*exp(-kn*15/u)
+
+data2vec = zeros(35,8);
+
+c02 = (110000*c02a + 15000*w2c*(1- e[i]))/125000
+b02 = (110000*b02a + 15000*w2b*(1- e[i]))/125000
+n02 = (110000*n02a + 15000*w2n*(1- e[i]))/125000
+
+xvec1 = range(0,35, length=35)
+# for loop to iterate through distance vector and evaluate function
+    for j in 1:35
+        data2vec[j,i] = docalc(xvec1[j],u,cs,c02,b02,n02)
+    end
+
+for i in 1:8
+    if minimum(minimum.([data2vec[:,i]])) > 4
+    return e[i]
+    end
+end
+
+end 
+```
+The treatment value needed for both sources is 0.25% 
 ## Problem 1.5
 
+I would just treat waste stream #2. This is because DO never gets below 4 until after waste stream 2, and 
+so installation of two separate treatment systems would be unecessary investment if one can do the job 
+(it only needs to remove 14% of the material). This decision would depend on capital costs and maintenance costs of the treatment facilities, 
+as well as how the treatment process itself is priced (by the m^3/d or by the mg/L, for example). 
+
 ## Problem 1.6
+
+
 
 ## Problem 1.7
 
