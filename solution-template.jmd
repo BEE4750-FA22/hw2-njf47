@@ -207,7 +207,70 @@ as well as how the treatment process itself is priced (by the m^3/d or by the mg
 
 ## Problem 1.6
 
+```julia
 
+using Distributions
+
+data = zeros(15,100);
+xvec = range(0,15, length=15)
+data2vec1 = zeros(35,100); 
+xvec1 = range(0,35, length=35)
+prob = zeros(100);
+
+for r in 1:100
+    bod = rand(Uniform(4,7))
+    nod = rand(Uniform(3,8))
+
+    e = 0.14;
+
+    # intial DO concentration at waste source 1 [mg/L]
+    c01 = (100000*7.5 + 10000*w1c)/110000
+    # initial BOD concentration at waste source 1 [mg/L]
+    b01 = (100000*bod + 10000*w1b)/110000
+    # initial NOD concentration at waste source 1 [mg/L]
+    n01 = (100000*nod + 10000*w1n)/110000
+
+    # establishing x (distance) vector and data vector to store values
+
+    # xvec = range(0,15, length=15)
+    # data = zeros(15,100);
+
+    # for loop to iterate through distance vector and evaluate function
+    for i in 1:15
+    data[i,r] = docalc(xvec[i],u,cs,c01,b01,n01)
+    end
+
+    # finding new initial DO concentration from data1 vector
+    c02a = data[15,r]
+    b02a = b01*exp(-kc*15/u)
+    n02a = n01*exp(-kn*15/u)
+
+    # data2vec1 = zeros(35,100);
+
+    c02 = (110000*c02a + 15000*w2c*(1-e))/125000
+    b02 = (110000*b02a + 15000*w2b*(1-e))/125000
+    n02 = (110000*n02a + 15000*w2n*(1-e))/125000
+
+    # xvec1 = range(0,35, length=35)
+
+    # for loop to iterate through distance vector and evaluate function
+    for j in 1:35
+     data2vec1[j,r] = docalc(xvec1[j],u,cs,c02,b02,n02)
+    end
+
+end 
+
+global l = 0;
+for t in 1:100
+    if (minimum(minimum.([data[:,t]])) < 4) || (minimum(minimum.([data2vec1[:,t]])) < 4)
+    global l = l+1;
+    end 
+end
+
+prob = l/100
+
+```
+The probability that the strategy (treating only at the second waste stream with 14% efficiency) will fail is approximately 75%. 
 
 ## Problem 1.7
 
@@ -230,6 +293,10 @@ end
 ```
 
 ## Problem 1.8
+
+The uncertainty in the estimates of CBOD and NBOD greatly affect the decision-making process of choosing a treatment plan. 
+When introducing the uncertainty in problem 1.6, the chosen treatment plan (only treating at the second waste stream, with 14% efficiency) fails three-quarters of the time. 
+This will not be sufficient to meet the EPA standards -- more times than not, the levels of dissolved oxygen will be too low. 
 
 ```
 
